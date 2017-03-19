@@ -1,54 +1,76 @@
-// This is main process of Electron, started as first thing when your
-// app starts. This script is running through entire life of your application.
-// It doesn't have any windows which you can see on screen, but we can open
-// window from here.
+const {app, BrowserWindow} = require('electron')
+const path = require('path')
+const url = require('url')
 
-import path from 'path';
-import url from 'url';
-import { app, Menu } from 'electron';
-import { devMenuTemplate } from './menu/dev_menu_template';
-import { editMenuTemplate } from './menu/edit_menu_template';
-import createWindow from './helpers/window';
-
-// Special module holding environment variables which you declared
-// in config/env_xxx.json file.
-import env from './env';
-
-const setApplicationMenu = () => {
-  const menus = [editMenuTemplate];
-  if (env.name !== 'production') {
-    menus.push(devMenuTemplate);
-  }
-  Menu.setApplicationMenu(Menu.buildFromTemplate(menus));
-};
-
-// Save userData in separate folders for each environment.
-// Thanks to this you can use production and development versions of the app
-// on same machine like those are two separate apps.
-if (env.name !== 'production') {
-  const userDataPath = app.getPath('userData');
-  app.setPath('userData', `${userDataPath} (${env.name})`);
+// Keep a global reference of the window object, if you don't, the window will
+// be closed automatically when the JavaScript object is garbage collected.
+let win
+const options = {
+	'min-height': 500,
+ 	'min-width': 700,
+	width: 800,
+	height: 600,
+	frame: true,
+	titleBarStyle:'hidden',
+	icon: __dirname+'/soundcloud.png'
 }
 
-app.on('ready', () => {
-  setApplicationMenu();
+function createWindow () {
+  // Create the browser window.
+  win = new BrowserWindow( options );
+  win.maximize();
+  // and load the index.html of the app.
+  // win.loadURL(url.format({
+  //   pathname: path.join(__dirname, 'index.html'),
+  //   protocol: 'file:',
+  //   slashes: true
+  // }))
+  //win.loadURL('https://soundcloud.com/');
+  // mainWindow.webContents.insertCSS
+  win.loadURL('https://soundcloud.com')
+  win.webContents.on('did-finish-load', function() {
+	  win.webContents.insertCSS('header, .header { -webkit-user-select: none; -webkit-app-region: drag; }');
 
-  const mainWindow = createWindow('main', {
-    width: 1000,
-    height: 600,
-  });
-
-  mainWindow.loadURL(url.format({
-    pathname: path.join(__dirname, 'app.html'),
-    protocol: 'file:',
-    slashes: true,
-  }));
-
-  if (env.name === 'development') {
-    mainWindow.openDevTools();
-  }
 });
+  win.once('ready-to-show', () => {
+	  // Make it dragable
+    //
+    // onsole.log(win);
+    // win.show()
+  })
+  // Open the DevTools.
+  //win.webContents.openDevTools()
 
+  // Emitted when the window is closed.
+  win.on('closed', () => {
+    // Dereference the window object, usually you would store windows
+    // in an array if your app supports multi windows, this is the time
+    // when you should delete the corresponding element.
+    win = null
+  })
+}
+
+// This method will be called when Electron has finished
+// initialization and is ready to create browser windows.
+// Some APIs can only be used after this event occurs.
+app.on('ready', createWindow)
+
+// Quit when all windows are closed.
 app.on('window-all-closed', () => {
-  app.quit();
-});
+  // On macOS it is common for applications and their menu bar
+  // to stay active until the user quits explicitly with Cmd + Q
+  if (process.platform !== 'darwin') {
+    app.quit()
+  }
+})
+
+app.on('activate', () => {
+  // On macOS it's common to re-create a window in the app when the
+  // dock icon is clicked and there are no other windows open.
+  if (win === null) {
+    createWindow()
+  }
+})
+
+// In this file you can include the rest of your app's specific main process
+// code. You can also put them in separate files and require them here.
